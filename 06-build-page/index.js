@@ -17,34 +17,37 @@ fs.writeFile(path.join(directoryProj, 'style.css'), '', (err) => {
 });
 
 //заменяем {{tag}} в template 
-fs.readFile(path.join(__dirname, 'template.html'), 'utf-8', function (err, templateData) {
-  if (err) throw err;
-  //читаем template и помещаем в переменную
-  let htmlText = templateData;
-  //Метод fs.readdir() асинхронное чтение содержимого каталога. callback возвращает массив всех имен файлов в каталоге.
-  fs.readdir(path.join(directoryComponents), { withFileTypes: true }, (err, files) => {
+const changeTag = () => {
+  fs.readFile(path.join(__dirname, 'template.html'), 'utf-8', function (err, templateData) {
     if (err) throw err;
-    //проходимся по каждому файлу в каталоге components
-    files.forEach((file) => {
-      fs.stat(path.join(path.join(directoryComponents), file.name), (err) => {
-        if (err) throw err;
-        if (file.name) {
-          fs.readFile(path.join(directoryComponents, file.name), (err, fileData) => {
-            if (err) throw err;
-            //вырезаем tag из файлов articles.html и др
-            let tag = file.name.split(".")[0];
-            htmlText = htmlText.replace(new RegExp(`{{${tag}}}`), fileData);
-            //вставляем преобразованный html в index.html
-            fs.writeFile(path.join(directoryProj, 'index.html'), htmlText, (err) => {
+    //читаем template и помещаем в переменную
+    let htmlText = templateData;
+    //Метод fs.readdir() асинхронное чтение содержимого каталога. callback возвращает массив всех имен файлов в каталоге.
+    fs.readdir(path.join(directoryComponents), { withFileTypes: true }, (err, files) => {
+      if (err) throw err;
+      //проходимся по каждому файлу в каталоге components
+      files.forEach((file) => {
+        fs.stat(path.join(directoryComponents, file.name), (err) => {
+          if (err) throw err;
+          if (file.name) {
+            fs.readFile(path.join(directoryComponents, file.name), (err, fileData) => {
               if (err) throw err;
+              //вырезаем tag из файлов articles.html и др
+              let tag = file.name.split(".")[0];
+              htmlText = htmlText.replace(new RegExp(`{{${tag}}}`), fileData);
+              //вставляем преобразованный html в index.html
+              fs.writeFile(path.join(directoryProj, 'index.html'), htmlText, (err) => {
+                if (err) throw err;
+              });
             });
-          });
-        };
+          };
+        });
       });
     });
   });
-});
-
+}
+changeTag();
+changeTag();
 
 //copy assets
 const src = path.join(__dirname, 'assets');
@@ -85,10 +88,11 @@ const stylePath = path.join(__dirname, 'styles'); //получаем путь к
 //Метод fs.readdir() используется для асинхронного чтения содержимого данного каталога.
 fs.readdir(stylePath, { withFileTypes: true }, function (err, files) {
   if (err) throw err;
+  [files[0], files[1], files[2]] = [files[1], files[2], files[0]];
   files.forEach(function (file) {
     if (file.isFile()) {    //проверка является ли файлом с разрешением css
       //Метод fs.stat() возвращает информации о файле или каталоге
-      fs.stat(path.join(stylePath, file.name), (err) => {
+      fs.stat(path.join(stylePath, file.name), (err,) => {
         if (err) throw err;
         //Метод path.parse() используется для возврата объекта со свойствами: root, dir, base, ext, name
         const extension = path.parse(file.name).ext;
@@ -99,7 +103,7 @@ fs.readdir(stylePath, { withFileTypes: true }, function (err, files) {
           stream.on('data', chunk => text += chunk); //отлавливаем событие когда посутпает data
           stream.on('end', () => { //отлавливаем событие когда data в потоке закончилась
             //Метод fs.appendFile() используется для асинхронного добавления заданных данных в файл
-            fs.appendFile(path.join(directoryProj, 'style.css'), text, (err) => {
+            fs.appendFile(path.join(directoryProj, 'style.css'), `${text} \n`, (err) => {
               if (err) throw err;
             });
           });
