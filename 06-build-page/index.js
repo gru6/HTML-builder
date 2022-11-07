@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const directoryProj = path.join(__dirname, 'project-dist');
+const directoryComponents = path.join(__dirname, 'components');
 
 //Метод fs.mkdir() асинхронное создание каталога project-dist
 fs.mkdir(directoryProj, { recursive: true }, err => {
@@ -11,23 +12,43 @@ fs.mkdir(directoryProj, { recursive: true }, err => {
 fs.writeFile(path.join(directoryProj, 'index.html'), '', (err) => {
   if (err) throw err;
 });
-console.log(path.join(__dirname, 'project-dist', 'index.html'))
-fs.writeFile(path.join(__dirname, 'project-dist', 'style.css'), '', (err) => {
+fs.writeFile(path.join(directoryProj, 'style.css'), '', (err) => {
   if (err) throw err;
 });
 
+//заменяем {{tag}} в template 
+fs.readFile(path.join(__dirname, 'template.html'), 'utf-8', function (err, templateData) {
+  if (err) throw err;
+  //читаем template и помещаем в переменную
+  let htmlText = templateData;
+  //Метод fs.readdir() асинхронное чтение содержимого каталога. callback возвращает массив всех имен файлов в каталоге.
+  fs.readdir(path.join(directoryComponents), { withFileTypes: true }, (err, files) => {
+    if (err) throw err;
+    //проходимся по каждому файлу в каталоге components
+    files.forEach((file) => {
+      fs.stat(path.join(path.join(directoryComponents), file.name), (err) => {
+        if (err) throw err;
+        if (file.name) {
+          fs.readFile(path.join(directoryComponents, file.name), (err, fileData) => {
+            if (err) throw err;
+            //вырезаем tag из файлов articles.html и др
+            let tag = file.name.split(".")[0];
+            htmlText = htmlText.replace(new RegExp(`{{${tag}}}`), fileData);
+            //вставляем преобразованный html в index.html
+            fs.writeFile(path.join(directoryProj, 'index.html'), htmlText, (err) => {
+              if (err) throw err;
+            });
+          });
+        };
+      });
+    });
+  });
+});
 
 
-
-
-
-
-
-
-//04 copy directorys and files
+//copy assets
 const src = path.join(__dirname, 'assets');
 const dest = path.join(directoryProj, 'assets');
-
 //создаем функцию по рекурсированному ассинхронному копированию файлов и диреткорий
 const copyAllFiles = (src, dest) => {
   //Метод fs.readdir() асинхронное чтение содержимого каталога. callback возвращает массив всех имен файлов в каталоге.
@@ -49,13 +70,17 @@ const copyAllFiles = (src, dest) => {
     });
   });
 };
-//создаем assets в project и вызываем функцию копирования
-fs.mkdir(path.join(directoryProj, 'assets'), { recursive: true }, (err) => {
+//каждый раз удаляем содержимое project-dist\assets для поддержания в актуальном состоянии
+fs.rm(dest, { recursive: true, force: true }, (err) => { //Метод fs.rm() удаление файла по указанному пути
   if (err) throw err;
-  copyAllFiles(src, dest);
+  //создаем assets в project и вызываем функцию копирования
+  fs.mkdir(path.join(directoryProj, 'assets'), { recursive: true }, (err) => {
+    if (err) throw err;
+    copyAllFiles(src, dest);
+  });
 });
 
-//05 merge styles
+//merge styles
 const stylePath = path.join(__dirname, 'styles'); //получаем путь к styles
 //Метод fs.readdir() используется для асинхронного чтения содержимого данного каталога.
 fs.readdir(stylePath, { withFileTypes: true }, function (err, files) {
@@ -74,7 +99,7 @@ fs.readdir(stylePath, { withFileTypes: true }, function (err, files) {
           stream.on('data', chunk => text += chunk); //отлавливаем событие когда посутпает data
           stream.on('end', () => { //отлавливаем событие когда data в потоке закончилась
             //Метод fs.appendFile() используется для асинхронного добавления заданных данных в файл
-            fs.appendFile(path.join(__dirname, 'project-dist', 'style.css'), text, (err) => {
+            fs.appendFile(path.join(directoryProj, 'style.css'), text, (err) => {
               if (err) throw err;
             });
           });
