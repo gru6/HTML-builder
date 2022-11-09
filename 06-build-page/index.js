@@ -47,7 +47,6 @@ const changeTag = () => {
   });
 }
 changeTag();
-changeTag();
 
 //copy assets
 const src = path.join(__dirname, 'assets');
@@ -73,6 +72,7 @@ const copyAllFiles = (src, dest) => {
     });
   });
 };
+changeTag();
 //каждый раз удаляем содержимое project-dist\assets для поддержания в актуальном состоянии
 fs.rm(dest, { recursive: true, force: true }, (err) => { //Метод fs.rm() удаление файла по указанному пути
   if (err) throw err;
@@ -82,7 +82,7 @@ fs.rm(dest, { recursive: true, force: true }, (err) => { //Метод fs.rm() у
     copyAllFiles(src, dest);
   });
 });
-
+changeTag();
 //merge styles
 const stylePath = path.join(__dirname, 'styles'); //получаем путь к styles
 //Метод fs.readdir() используется для асинхронного чтения содержимого данного каталога.
@@ -112,5 +112,5 @@ fs.readdir(stylePath, { withFileTypes: true }, function (err, files) {
     }
   });
 });
-
+changeTag();
 
